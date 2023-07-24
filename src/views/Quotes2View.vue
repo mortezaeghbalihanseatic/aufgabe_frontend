@@ -10,6 +10,7 @@ const props = defineProps({
 const QuoteId = ref(1);
 const QuoteData = ref(null);
 const isloading = ref(false);
+const message = ref(null);
 
 async function fetchData() {
   isloading.value = true;
@@ -20,13 +21,33 @@ async function fetchData() {
   };
 
   try {
-    const response = await axios.get(`${props.api}/api/quotes`, config);
-    const responseData = response.data;
+    const response = await axios.get(`${props.api}/api/otherquotes`, config);
+    let responseData = response.data;
 
     QuoteData.value = responseData;
 
+    message.value = "1";
+  } catch (error) {
+    message.value = error.message;
+    isloading.value = false;
+  }
+
+  try {
+    let responseData = [
+      { id: null, character: "...", quote: "...", image_url: "" },
+    ];
+    QuoteData.value.unshift(...responseData);
+    message.value = "2";
+    const response2 = await axios.get(`${props.api}/api/quote`, config);
+    message.value = "3";
+
+    responseData = response2.data;
+
+    QuoteData.value[0] = responseData;
+
     isloading.value = false;
   } catch (error) {
+    message.value = error.message;
     isloading.value = false;
   }
 }
@@ -37,21 +58,27 @@ watch(QuoteId, fetchData);
 </script>
 
 <template>
+  <!-- <h1>{{ message }}</h1> -->
   <div class="continer">
     <div class="btncntr">
-      <button @click="QuoteId++" :disabled="isloading" class="fetch-button">
-        Fetch next Quote
-      </button>
+      <button @click="QuoteId++" :disabled="isloading">Fetch next Quote</button>
     </div>
     <div>
       <p v-if="!QuoteData" class="loading-message">Loading ...</p>
       <ul class="quote-list" v-else>
         <li v-for="Quote in QuoteData" :key="Quote.id">
           <table class="quote-table">
-            <tr class="quote-row">
-              <td class="quote-cell quote-text">
-                <table>
-                  <tr>
+            <tr v-if="!Quote.id">
+                <td>
+                    loading ...
+                </td>
+            </tr>
+            <tr class="quote-row" v-else>
+              <td class="quote-cell quote-text" >
+             
+                <table >
+                  
+                  <tr >
                     <td>
                       <h3>
                         {{ Quote.id }}
@@ -95,13 +122,6 @@ watch(QuoteId, fetchData);
   margin: 2%;
 }
 
-/* Styles for the Fetch button */
-
-.fetch-button {
-  padding: 10px;
-
-}
-
 /* Styles for the Loading message */
 .loading-message {
   font-weight: bold;
@@ -141,7 +161,7 @@ watch(QuoteId, fetchData);
 /* Styles for the Quote image */
 .quote-image {
   /* max-width: 100px;
-  max-height: 100px; */
+    max-height: 100px; */
   width: 80px;
 }
 </style>
